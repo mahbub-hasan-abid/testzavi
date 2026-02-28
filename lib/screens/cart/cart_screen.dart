@@ -290,11 +290,13 @@ class _OrderSummary extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   Get.snackbar(
-                    'Order Placed',
-                    'Your order has been placed successfully! 🎉',
+                    'Coming Soon',
+                    'Checkout feature is not implemented yet',
                     snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: AppColors.successColor,
+                    backgroundColor: AppColors.primary,
                     colorText: Colors.white,
+                    icon: const Icon(Icons.info_outline, color: Colors.white),
+                    duration: const Duration(seconds: 3),
                   );
                 },
                 child: const Text(

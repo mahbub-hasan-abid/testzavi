@@ -129,63 +129,62 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: Listener(
-          // Listener is PRE-arena — it always receives raw pointer events
-          // even when the CustomScrollView has won the gesture arena.
-          // This means swipe detection never conflicts with vertical scroll.
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: _onPointerDown,
-          onPointerMove: _onPointerMove,
-          onPointerUp: _onPointerUp,
-          onPointerCancel: _onPointerCancel,
-          child: RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: () => ProductController.to.onRefresh(),
-            child: RawScrollbar(
+        // Listener is PRE-arena — it always receives raw pointer events
+        // even when the CustomScrollView has won the gesture arena.
+        // This means swipe detection never conflicts with vertical scroll.
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: _onPointerDown,
+        onPointerMove: _onPointerMove,
+        onPointerUp: _onPointerUp,
+        onPointerCancel: _onPointerCancel,
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () => ProductController.to.onRefresh(),
+          child: RawScrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            trackVisibility: true,
+            thickness: 6,
+            radius: const Radius.circular(6),
+            thumbColor: AppColors.primary,
+            trackColor: AppColors.primary.withValues(alpha: 0.12),
+            trackBorderColor: Colors.transparent,
+            child: CustomScrollView(
+              key: const PageStorageKey<String>('home_scroll'),
               controller: _scrollController,
-              thumbVisibility: true,
-              trackVisibility: true,
-              thickness: 6,
-              radius: const Radius.circular(6),
-              thumbColor: AppColors.primary,
-              trackColor: AppColors.primary.withValues(alpha: 0.12),
-              trackBorderColor: Colors.transparent,
-              child: CustomScrollView(
-                key: const PageStorageKey<String>('home_scroll'),
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                slivers: [
-                  // ── 1. Collapsible header ──────────────────────────────
-                  _CollapsibleHeader(cartController: CartController.to),
-
-                  // ── 2. Sticky 3-tab bar ────────────────────────────────
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _TabBarDelegate(
-                      activeTab: _activeTab,
-                      onTabSelected: _switchTab,
-                    ),
-                  ),
-
-                  // ── 3. Product grid ────────────────────────────────────
-                  Obx(() {
-                    final pc = ProductController.to;
-                    if (pc.isLoading) {
-                      return const SliverPadding(
-                        padding: EdgeInsets.all(AppDimensions.paddingS),
-                        sliver: ShimmerProductGrid(),
-                      );
-                    }
-                    return _ProductGrid(
-                      products: pc.productsForTab(_activeTab),
-                    );
-                  }),
-                ],
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
+              slivers: [
+                // ── 1. Collapsible header ────────────────────────────────
+                _CollapsibleHeader(cartController: CartController.to),
+
+                // ── 2. Sticky 3-tab bar ──────────────────────────────────
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _TabBarDelegate(
+                    activeTab: _activeTab,
+                    onTabSelected: _switchTab,
+                    topPadding: MediaQuery.of(context).padding.top,
+                  ),
+                ),
+
+                // ── 3. Product grid — Obx so search query triggers rebuild ─
+                Obx(() {
+                  final pc = ProductController.to;
+                  if (pc.isLoading) {
+                    return const SliverPadding(
+                      padding: EdgeInsets.all(AppDimensions.paddingS),
+                      sliver: ShimmerProductGrid(),
+                    );
+                  }
+                  return _ProductGrid(products: pc.productsForTab(_activeTab));
+                }),
+              ],
             ),
           ),
         ),
+      ),
       bottomNavigationBar: _BottomNav(),
     );
   }
@@ -237,8 +236,9 @@ class _CollapsibleHeader extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Status bar gap
+              // ── Status bar gap ─────────────────────────────────────────
               SizedBox(height: topPad),
+
               // ── Top bar ────────────────────────────────────────────────
               SizedBox(
                 height: 56,
@@ -302,15 +302,20 @@ class _CollapsibleHeader extends StatelessWidget {
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final HomeTab activeTab;
   final ValueChanged<HomeTab> onTabSelected;
+  final double topPadding;
 
-  const _TabBarDelegate({required this.activeTab, required this.onTabSelected});
+  const _TabBarDelegate({
+    required this.activeTab,
+    required this.onTabSelected,
+    required this.topPadding,
+  });
 
-  static const double _tabHeight = 48.0;
+  static const double _tabHeight = 54.0;
 
   @override
-  double get minExtent => _tabHeight;
+  double get minExtent => topPadding + _tabHeight;
   @override
-  double get maxExtent => _tabHeight;
+  double get maxExtent => topPadding + _tabHeight;
 
   @override
   Widget build(
@@ -318,64 +323,114 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return SafeArea(
-      bottom: false,
-      child: Material(
+    return Container(
+      decoration: BoxDecoration(
         color: Colors.white,
-        elevation: overlapsContent ? 4 : 0,
-        shadowColor: Colors.black26,
-        child: Column(
-          children: [
-            SizedBox(
-              height: _tabHeight - 1,
-              child: Row(
-                children: HomeTab.values.map((tab) {
-                  final selected = tab == activeTab;
-                  return Expanded(
-                    child: GestureDetector(
+        boxShadow: overlapsContent
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  offset: const Offset(0, 2),
+                  blurRadius: 8,
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        children: [
+          // Always show safe area padding when pinned at top
+          SizedBox(height: topPadding),
+          Container(
+            height: _tabHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: HomeTab.values.map((tab) {
+                final selected = tab == activeTab;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _TabButton(
+                      tab: tab,
+                      selected: selected,
                       onTap: () => onTabSelected(tab),
-                      behavior: HitTestBehavior.opaque,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: selected
-                                  ? AppColors.primary
-                                  : Colors.transparent,
-                              width: 2.5,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          tab.label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: selected
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ),
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                );
+              }).toList(),
             ),
-          const Divider(height: 1, thickness: 1, color: AppColors.divider),
+          ),
         ],
-        ),
       ),
     );
   }
 
   @override
-  bool shouldRebuild(_TabBarDelegate old) => old.activeTab != activeTab;
+  bool shouldRebuild(_TabBarDelegate old) =>
+      old.activeTab != activeTab || old.topPadding != topPadding;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Individual tab button with ripple effect
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TabButton extends StatelessWidget {
+  final HomeTab tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TabButton({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        color: selected ? AppColors.primary : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: selected
+            ? null
+            : Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
+        boxShadow: selected
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  offset: const Offset(0, 2),
+                  blurRadius: 6,
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          splashColor: selected
+              ? Colors.white.withValues(alpha: 0.2)
+              : AppColors.primary.withValues(alpha: 0.1),
+          highlightColor: selected
+              ? Colors.white.withValues(alpha: 0.1)
+              : AppColors.primary.withValues(alpha: 0.05),
+          child: Center(
+            child: Text(
+              tab.label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                color: selected ? Colors.white : AppColors.textSecondary,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -412,7 +467,12 @@ class _ProductGrid extends StatelessWidget {
 
     final cols = MediaQuery.of(context).size.width > 600 ? 3 : 2;
     return SliverPadding(
-      padding: const EdgeInsets.all(AppDimensions.paddingS),
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.paddingS,
+        4,
+        AppDimensions.paddingS,
+        AppDimensions.paddingS,
+      ),
       sliver: SliverGrid(
         delegate: SliverChildBuilderDelegate(
           (_, i) => ProductCard(
