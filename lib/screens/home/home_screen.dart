@@ -215,81 +215,78 @@ class _CollapsibleHeader extends StatelessWidget {
     final topPad = MediaQuery.of(context).padding.top;
     final expandedHeight = topPad + 56.0 + BannerWidget.height;
 
+    // Use SliverAppBar with toolbarHeight = full content height.
+    // This avoids FlexibleSpaceBar's internal padding that creates dead space.
     return SliverAppBar(
       expandedHeight: expandedHeight,
-      toolbarHeight: 0,
-      pinned: false, // ← header fully disappears on scroll
-      floating: true, // ← snaps back on slightest pull-down
-      snap: true, // ← completes snap instantly
-      backgroundColor: AppColors.primary,
+      collapsedHeight: expandedHeight,
+      toolbarHeight: expandedHeight,
+      pinned: false,
+      floating: true,
+      snap: true,
+      backgroundColor: Colors.transparent,
       automaticallyImplyLeading: false,
       elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.pin,
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.primary, AppColors.primaryDark],
-            ),
+      flexibleSpace: Container(
+        height: expandedHeight,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary, AppColors.primaryDark],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Status bar gap ─────────────────────────────────────────
-              SizedBox(height: topPad),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Status bar gap ───────────────────────────────────────────
+            SizedBox(height: topPad),
 
-              // ── Top bar ────────────────────────────────────────────────
-              SizedBox(
-                height: 56,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.paddingM,
-                  ),
-                  child: Row(
-                    children: [
-                      // Logo
-                      const Text(
-                        'Daraz',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 26,
-                          letterSpacing: 0.5,
-                        ),
+            // ── Top bar ──────────────────────────────────────────────────
+            SizedBox(
+              height: 56,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingM,
+                ),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Daraz',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 26,
+                        letterSpacing: 0.5,
                       ),
-                      const SizedBox(width: 12),
-                      // Search bar
-                      const Expanded(child: SearchBarWidget()),
-                      const SizedBox(width: 6),
-                      // Cart with badge
-                      Obx(
-                        () => _CartIconButton(count: cartController.itemCount),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(child: SearchBarWidget()),
+                    const SizedBox(width: 6),
+                    Obx(
+                      () => _CartIconButton(count: cartController.itemCount),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.person_outline_rounded,
+                        color: Colors.white,
+                        size: 24,
                       ),
-                      // Profile
-                      IconButton(
-                        icon: const Icon(
-                          Icons.person_outline_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        onPressed: () => Get.toNamed(AppRoutes.profile),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
+                      onPressed: () => Get.toNamed(AppRoutes.profile),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
-              // ── Promotional banner ─────────────────────────────────────
-              const BannerWidget(),
-            ],
-          ),
+            // ── Promotional banner ───────────────────────────────────────
+            const BannerWidget(),
+          ],
         ),
       ),
     );
