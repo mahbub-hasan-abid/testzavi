@@ -28,8 +28,10 @@ class ProductCard extends StatelessWidget {
             ),
           ],
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
           children: [
             // Product image
             ClipRRect(
@@ -68,20 +70,18 @@ class ProductCard extends StatelessWidget {
                 padding: const EdgeInsets.all(AppDimensions.paddingS),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Title — takes remaining space, clips if needed
-                    Expanded(
-                      child: Text(
-                        product.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
+                    // Title
+                    Text(
+                      product.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     // Rating
                     Row(
                       children: [
@@ -140,7 +140,7 @@ class ProductCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
+            ), // closes Expanded(child: Padding(...))
           ],
         ),
       ),

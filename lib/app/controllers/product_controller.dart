@@ -26,12 +26,27 @@ class ProductController extends GetxController {
 
   final _allProducts = <Product>[].obs;
   final _isLoading = false.obs;
+  final searchQuery = ''.obs;
 
   List<Product> get allProducts => List.unmodifiable(_allProducts);
   bool get isLoading => _isLoading.value;
 
-  /// Returns products for the given [HomeTab], filtered client-side.
+  List<Product> get searchResults {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return allProducts;
+    return _allProducts
+        .where(
+          (p) =>
+              p.title.toLowerCase().contains(q) ||
+              p.category.toLowerCase().contains(q),
+        )
+        .toList();
+  }
+
+  /// Returns products for the given [HomeTab].
+  /// When a search query is active it overrides the tab filter.
   List<Product> productsForTab(HomeTab tab) {
+    if (searchQuery.value.trim().isNotEmpty) return searchResults;
     switch (tab) {
       case HomeTab.all:
         return allProducts;
@@ -40,7 +55,6 @@ class ProductController extends GetxController {
             .where((p) => p.category.toLowerCase() == 'electronics')
             .toList();
       case HomeTab.clothing:
-        // Merge men's clothing + women's clothing into one tab
         return _allProducts
             .where((p) => p.category.toLowerCase().contains('clothing'))
             .toList();

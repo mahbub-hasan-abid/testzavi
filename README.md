@@ -12,8 +12,8 @@ flutter run
 ```
 
 Demo credentials (FakeStore API):
-- **Username:** `johnd`
-- **Password:** `m38rmF$`
+- **Username:** `johnd` / **Password:** `m38rmF$`
+- **Username:** `mor_2314` / **Password:** `83r5^_`
 
 Or tap **"Tap to fill"** on the login screen.
 
@@ -57,16 +57,30 @@ lib/
 
 ### 1. How Horizontal Swipe Was Implemented
 
-Horizontal tab-switching is handled by `_HorizontalSwipeDetector` — a custom `StatefulWidget` that wraps the product grid area.
+Horizontal tab-switching uses a **`Listener`** widget wrapping the entire `Scaffold` body — intentionally chosen over `GestureDetector`.
 
-**Key design decision:**  
-Rather than using a `PageView` (which would create a *second* scroll axis competing with the vertical `CustomScrollView`), we use a bare `GestureDetector` with `onHorizontalDragEnd`. The logic:
+**Why `Listener` instead of `GestureDetector`?**
 
-- Track `startX` and `startY` on drag start.
-- On drag update, **cancel** tracking if `|dy| > |dx|` — i.e., the gesture is more vertical than horizontal. This lets vertical scrolling win naturally.
-- On drag end, read `primaryVelocity`. If it exceeds a threshold (40 px/s), call `onSwipeLeft` or `onSwipeRight` to update the tab index in `HomeScreen`'s local `setState`.
+`GestureDetector` participates in Flutter's gesture arena: it competes with the `CustomScrollView`'s scroll recognizer for ownership of each pointer sequence. If the scroll view wins the arena, the `GestureDetector` never fires — horizontal swipes that start with even a slight vertical component get claimed by the scroll view and are silently dropped.
 
-This approach means horizontal gestures are **claimed only when intentionally horizontal** and never fight with vertical scroll.
+`Listener` is **pre-arena** — it receives every raw `PointerEvent` unconditionally, before arena resolution. This means our swipe detector always sees every finger movement regardless of who wins the arena.
+
+**Logic (in `_HomeScreenState`):**
+
+```
+onPointerDown  → record start position, reset flags
+onPointerMove  → compute dx / dy from start:
+                  • if dy > dx AND dy > 10px → cancel (vertical gesture, let scroll win)
+                  • if dx ≥ 20px AND dx > dy/0.6 → lock in as horizontal swipe
+onPointerUp    → if locked:
+                  • confirm total displacement is still more horizontal than vertical
+                  • totalDx < 0 → next tab;  totalDx > 0 → previous tab
+```
+
+This means:
+- A purely vertical scroll is **never interrupted** — the cancel flag fires at the first hint of vertical dominance.
+- A clearly horizontal swipe always fires — even if the scroll view is also scrolling.
+- **No gesture arena conflict** — the `Listener` never claims or competes for pointer ownership.
 
 ---
 
@@ -74,18 +88,21 @@ This approach means horizontal gestures are **claimed only when intentionally ho
 
 **The single `CustomScrollView` in `HomeScreen` owns all vertical scrolling.**
 
-There is exactly one `ScrollController` (`_scrollController`) and one `CustomScrollView` in the entire screen. All content — the collapsible header, the sticky tab bar, and the product grid — lives inside this one scroll view as slivers:
+There is exactly one `ScrollController` (`_scrollController`) and one `CustomScrollView` in the entire screen. All content lives inside this one scroll view as slivers:
 
 | Sliver | Widget | Notes |
 |---|---|---|
-| Collapsible header | `SliverAppBar` | Expands/collapses naturally |
-| Sticky tab bar | `SliverPersistentHeader(pinned: true)` | Sticks once header scrolls away |
-| Product grid | `SliverToBoxAdapter` → `GridView(physics: NeverScrollableScrollPhysics)` | GridView is **non-scrollable** |
+| Collapsible header | `SliverAppBar(floating, snap)` | Fully collapses on scroll, snaps back on pull |
+| Sticky tab bar | `SliverPersistentHeader(pinned: true)` | Sticks at top once header scrolls away |
+| Product grid | `SliverGrid` | Native sliver — no `shrinkWrap`, no nested scroll |
 
-The `GridView` inside the tab content has `physics: NeverScrollableScrollPhysics()` so it never creates a nested scroll context. It uses `shrinkWrap: true` so the outer `CustomScrollView` controls all scroll.
+**Why `SliverGrid` instead of `GridView(shrinkWrap: true)`?**
 
-**Why this matters:**  
-Switching tabs only swaps the sliver content (via `setState`). The `ScrollController` position is never touched on tab switch, so there is no scroll jump or reset.
+`GridView(shrinkWrap: true, physics: NeverScrollableScrollPhysics)` forces the entire product list to lay out eagerly and creates a nested scroll context (even with `NeverScrollable`). `SliverGrid` is a first-class citizen of the `CustomScrollView` — it lays out lazily, has no scroll context of its own, and never conflicts.
+
+**Why tab switching doesn't jump scroll position:**
+
+Switching tabs calls `setState(() => _activeTab = newTab)`. This rebuilds only the `Obx` that wraps `_ProductGrid` — it replaces the sliver's child delegate. The `ScrollController` position is never read or written on tab change. The scroll view itself does not remount.
 
 ---
 
@@ -93,25 +110,27 @@ Switching tabs only swaps the sliver content (via `setState`). The `ScrollContro
 
 | Trade-off | Explanation |
 |---|---|
-| `shrinkWrap: true` on GridView | Causes the entire product list to be laid out eagerly (no lazy loading). Fine for FakeStore's ~20 products. For 1000+ products, use `SliverGrid` instead. |
-| Tab content is not animated | Switching tabs has no slide animation since we avoid `PageView`. A custom `AnimatedSwitcher` with a horizontal clip could add polish. |
-| No true lazy loading per tab | All tab products are fetched upfront. Could be optimized to fetch only the visible tab on demand. |
-| FakeStore token contains no user ID | We hardcode `userId = 1` after login since FakeStore's JWT doesn't expose the user ID in a standard way without a JWT decoder. In a real app, decode the JWT or call `/users/me`. |
-| Pull-to-refresh reloads ALL tabs | Since there's one scroll view, one `RefreshIndicator` serves all tabs, which reloads everything. This is correct behavior here. |
+| `Listener` sees all pointer events | The swipe detection logic in `onPointerMove` runs on every frame while a finger is down. It is O(1) and trivially fast, but it is more code than a simple `GestureDetector.onHorizontalDragEnd`. |
+| No swipe animation | Switching tabs has no slide animation — we deliberately avoid `PageView` since it would introduce a second scroll axis. An `AnimatedSwitcher` with a directional clip could add polish without conflict. |
+| Client-side tab filtering | All ~40 products are fetched once (asc + desc from FakeStore) and filtered in-memory per tab. For a real app with thousands of SKUs per category, you'd paginate per-tab with separate API calls. |
+| FakeStore JWT has no user ID | FakeStore's login returns a token but the JWT payload doesn't expose `userId` in a standard claim. We hardcode `userId = 1` for cart API calls. In a real app, decode the JWT or call `/users/me`. |
+| Pull-to-refresh reloads all tabs | One `RefreshIndicator` on the single scroll view reloads the entire product list. This is correct and intentional — there is no per-tab independent data. |
+| `floating + snap` header | The header uses `pinned: false, floating: true, snap: true` so it fully disappears on scroll but snaps back instantly on pull. The tab bar accounts for safe-area height via `overlapsContent` so tabs are always tappable below the status bar. |
 
 ---
 
 ## ✅ Features
 
 - [x] Login with session persistence (`SharedPreferences`)
-- [x] Collapsible header with search bar and banner
+- [x] Collapsible header with search bar and auto-advancing banner
 - [x] Sticky tab bar (pinned with `SliverPersistentHeader`)
-- [x] 2–N tabs from API categories (dynamic)
+- [x] 3 tabs: All / Electronics / Clothing
 - [x] **Single vertical scroll** — no nested scrolling conflicts
+- [x] **`SliverGrid`** — lazy, no shrinkWrap, no nested scroll context
 - [x] Pull-to-refresh on any tab
 - [x] Tab switching does NOT reset scroll position
-- [x] Horizontal swipe to switch tabs (no vertical scroll interference)
-- [x] Product grid from FakeStore API
+- [x] Horizontal swipe via `Listener` — never conflicts with vertical scroll
+- [x] Live product search across all tabs
 - [x] Product detail screen
 - [x] Cart with add/update/delete (synced to API)
 - [x] User profile from FakeStore API
@@ -131,18 +150,3 @@ Switching tabs only swaps the sliver content (via `setState`). The `ScrollContro
 | `cached_network_image` | Efficient image loading with caching |
 | `flutter_rating_bar` | Star rating display |
 | `shimmer` | Loading skeleton UI |
-
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# testzavi

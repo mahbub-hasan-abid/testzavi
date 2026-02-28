@@ -165,23 +165,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   delegate: _TabBarDelegate(
                     activeTab: _activeTab,
                     onTabSelected: _switchTab,
+                    topPadding: MediaQuery.of(context).padding.top,
                   ),
                 ),
 
-                // ── 3. Product grid — GetBuilder wraps only this sliver ──
-                GetBuilder<ProductController>(
-                  builder: (pc) {
-                    if (pc.isLoading) {
-                      return const SliverPadding(
-                        padding: EdgeInsets.all(AppDimensions.paddingS),
-                        sliver: ShimmerProductGrid(),
-                      );
-                    }
-                    return _ProductGrid(
-                      products: pc.productsForTab(_activeTab),
+                // ── 3. Product grid — Obx so search query triggers rebuild ─
+                Obx(() {
+                  final pc = ProductController.to;
+                  if (pc.isLoading) {
+                    return const SliverPadding(
+                      padding: EdgeInsets.all(AppDimensions.paddingS),
+                      sliver: ShimmerProductGrid(),
                     );
-                  },
-                ),
+                  }
+                  return _ProductGrid(products: pc.productsForTab(_activeTab));
+                }),
               ],
             ),
           ),
@@ -193,7 +191,19 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Collapsible header (SliverAppBar)
+// 1. Collapsible header
+//
+// Collapse behaviour:
+//   • pinned: false  → the ENTIRE header scrolls away.
+//   • floating: true → it snaps back when you pull down even a little.
+//   • Only the tab bar (SliverPersistentHeader pinned:true) stays visible.
+//
+// Height breakdown:
+//   topPad       = status-bar height  (varies by device)
+//   topBar 56 px = logo + search + icons row
+//   banner 120px = auto-advancing promo carousel
+//   ─────────────────────────────────────────────────────
+//   expandedHeight = topPad + 56 + 120
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CollapsibleHeader extends StatelessWidget {
@@ -203,67 +213,82 @@ class _CollapsibleHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    // expandedHeight = status bar + top-bar (56) + banner (50)
-    // Must exactly match the actual rendered heights or the tab bar
-    // will be clipped / unreachable after the header collapses.
-    final expandedHeight = topPad + 56.0 + 50.0;
+    final expandedHeight = topPad + 56.0 + BannerWidget.height;
 
     return SliverAppBar(
       expandedHeight: expandedHeight,
-      // toolbarHeight = status bar + top-bar row so the logo/search/cart
-      // remain pinned to the top after the banner collapses.
-      toolbarHeight: topPad + 56.0,
-      floating: false,
-      pinned: true, // keeps the top bar visible — tab bar is never hidden
-      snap: false,
+      toolbarHeight: 0,
+      pinned: false, // ← header fully disappears on scroll
+      floating: true, // ← snaps back on slightest pull-down
+      snap: true, // ← completes snap instantly
       backgroundColor: AppColors.primary,
       automaticallyImplyLeading: false,
+      elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.pin,
-        background: Column(
-          children: [
-            SizedBox(height: topPad),
-            // ── Top bar: logo · search · cart · profile ──────────────────
-            Container(
-              height: 56,
-              color: AppColors.primary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.paddingM,
-              ),
-              child: Row(
-                children: [
-                  // Logo
-                  const Text(
-                    'Daraz',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Search bar (expanded)
-                  const Expanded(child: SearchBarWidget()),
-                  const SizedBox(width: 4),
-                  // Cart icon with badge
-                  Obx(() => _CartIconButton(count: cartController.itemCount)),
-                  // Profile
-                  IconButton(
-                    icon: const Icon(Icons.person_outline, color: Colors.white),
-                    onPressed: () => Get.toNamed(AppRoutes.profile),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
-                    ),
-                  ),
-                ],
-              ),
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.primary, AppColors.primaryDark],
             ),
-            // ── Promo banner (collapsible part) ─────────────────────────
-            const BannerWidget(),
-          ],
+          ),
+          child: Column(
+            children: [
+              // ── Status bar gap ─────────────────────────────────────────
+              SizedBox(height: topPad),
+
+              // ── Top bar ────────────────────────────────────────────────
+              SizedBox(
+                height: 56,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingM,
+                  ),
+                  child: Row(
+                    children: [
+                      // Logo
+                      const Text(
+                        'Daraz',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Search bar
+                      const Expanded(child: SearchBarWidget()),
+                      const SizedBox(width: 6),
+                      // Cart with badge
+                      Obx(
+                        () => _CartIconButton(count: cartController.itemCount),
+                      ),
+                      // Profile
+                      IconButton(
+                        icon: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        onPressed: () => Get.toNamed(AppRoutes.profile),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Promotional banner ─────────────────────────────────────
+              const BannerWidget(),
+            ],
+          ),
         ),
       ),
     );
@@ -277,15 +302,20 @@ class _CollapsibleHeader extends StatelessWidget {
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final HomeTab activeTab;
   final ValueChanged<HomeTab> onTabSelected;
+  final double topPadding;
 
-  const _TabBarDelegate({required this.activeTab, required this.onTabSelected});
+  const _TabBarDelegate({
+    required this.activeTab,
+    required this.onTabSelected,
+    required this.topPadding,
+  });
 
-  static const double _height = 48.0;
+  static const double _tabHeight = 48.0;
 
   @override
-  double get minExtent => _height;
+  double get minExtent => topPadding + _tabHeight;
   @override
-  double get maxExtent => _height;
+  double get maxExtent => topPadding + _tabHeight;
 
   @override
   Widget build(
@@ -293,14 +323,18 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    // Only show the status-bar gap when the collapsible header has fully
+    // scrolled away — otherwise it creates a visible empty orange stripe.
+    final visibleTopPad = overlapsContent ? topPadding : 0.0;
     return Material(
       color: Colors.white,
       elevation: overlapsContent ? 4 : 0,
       shadowColor: Colors.black26,
       child: Column(
         children: [
+          SizedBox(height: visibleTopPad),
           SizedBox(
-            height: _height - 1,
+            height: _tabHeight - 1,
             child: Row(
               children: HomeTab.values.map((tab) {
                 final selected = tab == activeTab;
@@ -347,7 +381,8 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(_TabBarDelegate old) => old.activeTab != activeTab;
+  bool shouldRebuild(_TabBarDelegate old) =>
+      old.activeTab != activeTab || old.topPadding != topPadding;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -396,7 +431,7 @@ class _ProductGrid extends StatelessWidget {
         ),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: cols,
-          childAspectRatio: 0.58,
+          childAspectRatio: 0.56,
           crossAxisSpacing: AppDimensions.paddingS,
           mainAxisSpacing: AppDimensions.paddingS,
         ),
@@ -520,34 +555,47 @@ class _BottomNav extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCROLL ARCHITECTURE EXPLANATION
+// SCROLL & GESTURE ARCHITECTURE
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// SINGLE SCROLL OWNER:
-//   There is exactly ONE ScrollController driving ONE CustomScrollView.
-//   All content (header, tab bar, product grids) lives inside that single
-//   CustomScrollView as slivers. This eliminates all nested-scroll conflicts.
+// ── 1. SINGLE SCROLL OWNER ───────────────────────────────────────────────────
+//   One CustomScrollView + one ScrollController owns ALL vertical scrolling.
+//   Every piece of content (header, tab bar, grid) is a sliver inside it.
+//   There are NO nested scroll views anywhere in the tree.
 //
-// HOW TABS WORK:
-//   - Tab content is NOT a separate scrollable widget.
-//   - Each "tab" is a SliverList that is shown/hidden based on the selected
-//     tab index via an Obx rebuild inside a single SliverMainAxisGroup.
-//   - Switching tabs replaces the sliver content in place — the outer
-//     ScrollController position is preserved and never reset.
+// ── 2. PRODUCT GRID — SliverGrid (not shrinkWrap GridView) ───────────────────
+//   SliverGrid is a first-class sliver: it lays out lazily, has no scroll
+//   context of its own, and never conflicts with the parent CustomScrollView.
+//   Using GridView(shrinkWrap:true) would force eager layout AND create a
+//   nested scroll context even with NeverScrollableScrollPhysics.
 //
-// HORIZONTAL SWIPE:
-//   A GestureDetector with HitTestBehavior.deferToChild wraps the sliver
-//   content area. Horizontal drags are consumed locally to switch tabs
-//   while vertical drags are ignored (fall through to the ScrollView).
-//   This prevents horizontal gestures from participating in vertical scroll.
+// ── 3. TAB SWITCHING — NO SCROLL JUMP ────────────────────────────────────────
+//   setState(() => _activeTab = tab) rebuilds only the Obx wrapping _ProductGrid.
+//   The ScrollController position is never read or written on tab change.
+//   The CustomScrollView does NOT remount — scroll position is fully preserved.
 //
-// PULL-TO-REFRESH:
-//   A single SliverRefreshControl (via RefreshIndicator wrapper on the
-//   CustomScrollView) handles pull-to-refresh for all tabs since there is
-//   only one scroll view.
+// ── 4. HORIZONTAL SWIPE — Listener (pre-arena) ───────────────────────────────
+//   We use Listener instead of GestureDetector deliberately.
+//   GestureDetector enters the gesture arena and can LOSE to the CustomScrollView
+//   — swipes that start slightly vertical get silently swallowed by the scroll.
+//   Listener fires on every raw PointerEvent BEFORE arena resolution, so our
+//   swipe detection always runs regardless of who wins the arena.
 //
-// TAB BAR PINNING:
-//   A SliverPersistentHeader with pinned: true holds the tab bar.
-//   It stays on screen once the collapsible header scrolls away.
+//   Logic:
+//     onPointerDown  → record start position
+//     onPointerMove  → if dy > dx && dy > 10px → cancel (vertical motion)
+//                      if dx ≥ 20px && dx > dy/0.6 → lock as horizontal
+//     onPointerUp    → if locked, check total displacement → switch tab
+//
+// ── 5. PULL-TO-REFRESH ───────────────────────────────────────────────────────
+//   RefreshIndicator wraps the single CustomScrollView → works from any tab
+//   since there is only one scroll view and one scroll position.
+//
+// ── 6. STICKY TAB BAR (safe-area aware) ──────────────────────────────────────
+//   SliverPersistentHeader(pinned: true) holds the tab bar.
+//   Its minExtent/maxExtent include topPadding (status-bar height).
+//   The topPadding is only rendered (SizedBox) when overlapsContent=true,
+//   i.e., when the collapsible header has scrolled away and the tab bar
+//   is pinned at the very top — keeping tabs below the status bar.
 //
 // ─────────────────────────────────────────────────────────────────────────────
