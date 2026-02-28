@@ -51,13 +51,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // We use Listener instead of GestureDetector so we NEVER enter the gesture
   // arena and NEVER compete with the CustomScrollView's scroll recognizer.
   // Listener fires for every raw pointer event regardless of who wins the arena.
-  Offset? _pointerDown;    // position at finger-down
-  Offset? _pointerCurrent; // latest finger position
+  Offset? _pointerDown; // position at finger-down
   bool _swipeLocked = false; // true once we've committed to horizontal
   bool _swipeCancelled = false; // true if motion became too vertical
 
   static const double _minHorizontalPx = 20.0; // min horizontal travel
-  static const double _maxVerticalRatio = 0.6;  // dy/dx must stay below this
+  static const double _maxVerticalRatio = 0.6; // dy/dx must stay below this
 
   void _switchTab(HomeTab tab) {
     if (_activeTab == tab) return;
@@ -66,14 +65,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onPointerDown(PointerDownEvent e) {
     _pointerDown = e.position;
-    _pointerCurrent = e.position;
     _swipeLocked = false;
     _swipeCancelled = false;
   }
 
   void _onPointerMove(PointerMoveEvent e) {
     if (_swipeCancelled || _pointerDown == null) return;
-    _pointerCurrent = e.position;
     final dx = (e.position.dx - _pointerDown!.dx).abs();
     final dy = (e.position.dy - _pointerDown!.dy).abs();
     if (!_swipeLocked) {
