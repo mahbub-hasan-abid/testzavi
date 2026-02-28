@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   delegate: _TabBarDelegate(
                     activeTab: _activeTab,
                     onTabSelected: _switchTab,
-                    topPadding: MediaQuery.of(context).padding.top,
+                    safeTopPadding: MediaQuery.of(context).padding.top,
                   ),
                 ),
 
@@ -213,7 +213,7 @@ class _CollapsibleHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    final expandedHeight = topPad + 56.0 + BannerWidget.height;
+    final expandedHeight = topPad + 15.0 + BannerWidget.height;
 
     return SliverAppBar(
       expandedHeight: expandedHeight,
@@ -302,20 +302,20 @@ class _CollapsibleHeader extends StatelessWidget {
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final HomeTab activeTab;
   final ValueChanged<HomeTab> onTabSelected;
-  final double topPadding;
+  final double safeTopPadding;
 
   const _TabBarDelegate({
     required this.activeTab,
     required this.onTabSelected,
-    required this.topPadding,
+    required this.safeTopPadding,
   });
 
-  static const double _tabHeight = 54.0;
+  static const double _tabHeight = 46.0;
 
   @override
-  double get minExtent => topPadding + _tabHeight;
+  double get minExtent => safeTopPadding + _tabHeight;
   @override
-  double get maxExtent => topPadding + _tabHeight;
+  double get maxExtent => safeTopPadding + _tabHeight;
 
   @override
   Widget build(
@@ -323,6 +323,9 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    // How much of the safe area padding to show (0 when expanded, full when collapsed)
+    final double topPad = shrinkOffset.clamp(0.0, safeTopPadding);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -338,11 +341,10 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
       ),
       child: Column(
         children: [
-          // Always show safe area padding when pinned at top
-          SizedBox(height: topPadding),
+          SizedBox(height: topPad),
           Container(
             height: _tabHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Row(
               children: HomeTab.values.map((tab) {
                 final selected = tab == activeTab;
@@ -366,7 +368,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_TabBarDelegate old) =>
-      old.activeTab != activeTab || old.topPadding != topPadding;
+      old.activeTab != activeTab || old.safeTopPadding != safeTopPadding;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
