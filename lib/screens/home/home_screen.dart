@@ -215,78 +215,77 @@ class _CollapsibleHeader extends StatelessWidget {
     final topPad = MediaQuery.of(context).padding.top;
     final expandedHeight = topPad + 56.0 + BannerWidget.height;
 
-    // Use SliverAppBar with toolbarHeight = full content height.
-    // This avoids FlexibleSpaceBar's internal padding that creates dead space.
     return SliverAppBar(
       expandedHeight: expandedHeight,
-      collapsedHeight: expandedHeight,
-      toolbarHeight: expandedHeight,
+      toolbarHeight: 0,
+      collapsedHeight: 0,
       pinned: false,
       floating: true,
       snap: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.primary,
       automaticallyImplyLeading: false,
       elevation: 0,
-      flexibleSpace: Container(
-        height: expandedHeight,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.primary, AppColors.primaryDark],
+      flexibleSpace: OverflowBox(
+        alignment: Alignment.topCenter,
+        maxHeight: expandedHeight,
+        child: Container(
+          height: expandedHeight,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.primary, AppColors.primaryDark],
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ── Status bar gap ───────────────────────────────────────────
-            SizedBox(height: topPad),
-
-            // ── Top bar ──────────────────────────────────────────────────
-            SizedBox(
-              height: 56,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingM,
-                ),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Daraz',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 26,
-                        letterSpacing: 0.5,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: topPad),
+              // ── Top bar ────────────────────────────────────────────────
+              SizedBox(
+                height: 56,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.paddingM,
+                  ),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Daraz',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(child: SearchBarWidget()),
-                    const SizedBox(width: 6),
-                    Obx(
-                      () => _CartIconButton(count: cartController.itemCount),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.person_outline_rounded,
-                        color: Colors.white,
-                        size: 24,
+                      const SizedBox(width: 12),
+                      const Expanded(child: SearchBarWidget()),
+                      const SizedBox(width: 6),
+                      Obx(
+                        () => _CartIconButton(count: cartController.itemCount),
                       ),
-                      onPressed: () => Get.toNamed(AppRoutes.profile),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
+                      IconButton(
+                        icon: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        onPressed: () => Get.toNamed(AppRoutes.profile),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-            // ── Promotional banner ───────────────────────────────────────
-            const BannerWidget(),
-          ],
+              // ── Banner ─────────────────────────────────────────────────
+              const BannerWidget(),
+            ],
+          ),
         ),
       ),
     );
@@ -313,7 +312,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   double get minExtent => _tabHeight;
   @override
-  double get maxExtent => topPadding + _tabHeight;
+  double get maxExtent => _tabHeight;
 
   @override
   Widget build(
