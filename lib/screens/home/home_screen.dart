@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               key: const PageStorageKey<String>('home_scroll'),
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
+                parent: ClampingScrollPhysics(),
               ),
               slivers: [
                 // ── 1. Collapsible header ────────────────────────────────
@@ -225,7 +225,7 @@ class _CollapsibleHeader extends StatelessWidget {
       automaticallyImplyLeading: false,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.pin,
+        collapseMode: CollapseMode.parallax,
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -431,7 +431,7 @@ class _ProductGrid extends StatelessWidget {
         ),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: cols,
-          childAspectRatio: 0.56,
+          mainAxisExtent: 310,
           crossAxisSpacing: AppDimensions.paddingS,
           mainAxisSpacing: AppDimensions.paddingS,
         ),

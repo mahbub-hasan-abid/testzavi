@@ -33,32 +33,26 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
           children: [
-            // Product image
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppDimensions.radiusM),
-                topRight: Radius.circular(AppDimensions.radiusM),
-              ),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: CachedNetworkImage(
-                  imageUrl: product.image,
-                  fit: BoxFit.contain,
-                  placeholder: (_, __) => Container(
-                    color: AppColors.scaffoldBg,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                        strokeWidth: 2,
-                      ),
+            // Product image — container already clips via clipBehavior: antiAlias
+            AspectRatio(
+              aspectRatio: 1,
+              child: CachedNetworkImage(
+                imageUrl: product.image,
+                fit: BoxFit.contain,
+                placeholder: (_, __) => Container(
+                  color: AppColors.scaffoldBg,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                      strokeWidth: 2,
                     ),
                   ),
-                  errorWidget: (_, __, ___) => Container(
-                    color: AppColors.scaffoldBg,
-                    child: const Icon(
-                      Icons.image_not_supported,
-                      color: AppColors.textHint,
-                    ),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  color: AppColors.scaffoldBg,
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    color: AppColors.textHint,
                   ),
                 ),
               ),
@@ -67,21 +61,24 @@ class ProductCard extends StatelessWidget {
             // Info section
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(AppDimensions.paddingS),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
-                    // Title
+                    // Title — max 2 lines
                     Text(
                       product.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.textPrimary,
+                        height: 1.35,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 5),
                     // Rating
                     Row(
                       children: [
@@ -94,14 +91,17 @@ class ProductCard extends StatelessWidget {
                           itemCount: 5,
                           itemSize: 11,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                         Text(
                           '(${product.rating.count})',
-                          style: AppTextStyles.caption,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     // Price row
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -113,23 +113,45 @@ class ProductCard extends StatelessWidget {
                             children: [
                               Text(
                                 '\$${product.price.toStringAsFixed(2)}',
-                                style: AppTextStyles.priceSmall,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.priceColor,
+                                ),
                               ),
                               Text(
                                 '\$${product.originalPrice.toStringAsFixed(2)}',
-                                style: AppTextStyles.originalPrice,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                  decoration: TextDecoration.lineThrough,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        Text(
-                          '-${product.discountPercent}%',
-                          style: AppTextStyles.discount,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.successColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '-${product.discountPercent}%',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.successColor,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    // Add to cart button
+                    const Spacer(),
+                    // Add to cart button — always at bottom
                     Obx(() {
                       final qty = CartController.to.quantityOf(product.id);
                       if (qty > 0) {
