@@ -1,13 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BannerWidget — full-width auto-advancing promotional carousel.
-// • Auto-advances every 3.5 s with smooth PageView animation.
-// • Dot indicator with active-pill animation.
-// • Each banner has a gradient background, large emoji icon, and bold copy.
-// ─────────────────────────────────────────────────────────────────────────────
-
 class BannerWidget extends StatefulWidget {
   const BannerWidget({super.key});
   static const double height = 120.0;
