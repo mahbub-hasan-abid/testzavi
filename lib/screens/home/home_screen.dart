@@ -323,59 +323,59 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    // Only show the status-bar gap when the collapsible header has fully
-    // scrolled away — otherwise it creates a visible empty orange stripe.
-    final visibleTopPad = overlapsContent ? topPadding : 0.0;
     return Material(
       color: Colors.white,
-      elevation: overlapsContent ? 4 : 0,
+      elevation: overlapsContent ? 3 : 0,
       shadowColor: Colors.black26,
-      child: Column(
-        children: [
-          SizedBox(height: visibleTopPad),
-          SizedBox(
-            height: _tabHeight - 1,
-            child: Row(
-              children: HomeTab.values.map((tab) {
-                final selected = tab == activeTab;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => onTabSelected(tab),
-                    behavior: HitTestBehavior.opaque,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
+      child: SafeArea(
+        top: overlapsContent,
+        bottom: false,
+        child: Column(
+          children: [
+            SizedBox(
+              height: _tabHeight - 1,
+              child: Row(
+                children: HomeTab.values.map((tab) {
+                  final selected = tab == activeTab;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => onTabSelected(tab),
+                      behavior: HitTestBehavior.opaque,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: selected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              width: 2.5,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          tab.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: selected
                                 ? AppColors.primary
-                                : Colors.transparent,
-                            width: 2.5,
+                                : AppColors.textSecondary,
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ),
-                      child: Text(
-                        tab.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: selected
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-          const Divider(height: 1, thickness: 1, color: AppColors.divider),
-        ],
+            const Divider(height: 1, thickness: 1, color: AppColors.divider),
+          ],
+        ),
       ),
     );
   }
@@ -431,7 +431,7 @@ class _ProductGrid extends StatelessWidget {
         ),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: cols,
-          mainAxisExtent: 310,
+          mainAxisExtent: 330,
           crossAxisSpacing: AppDimensions.paddingS,
           mainAxisSpacing: AppDimensions.paddingS,
         ),
