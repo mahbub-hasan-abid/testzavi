@@ -64,7 +64,7 @@ lib/
 
 ### 1️⃣ How Horizontal Swipe Was Implemented
 
-**TL;DR:** We use `Listener` (pre-arena pointer events) instead of `GestureDetector` to avoid gesture conflicts.
+**TL;DR:** I use `Listener` (pre-arena pointer events) instead of `GestureDetector` to avoid gesture conflicts.
 
 #### Why Not `GestureDetector`?
 
@@ -72,7 +72,7 @@ lib/
 
 #### Why `Listener`?
 
-`Listener` receives **raw `PointerEvent`s before arena resolution**. Our swipe logic always runs regardless of who wins the vertical scroll.
+`Listener` receives **raw `PointerEvent`s before arena resolution**. My swipe logic always runs regardless of who wins the vertical scroll.
 
 **Implementation (`_HomeScreenState` in `home_screen.dart`):**
 
@@ -142,7 +142,7 @@ void _switchTab(HomeTab tab) {
 |---|---|---|
 | **Swipe Detection** | `Listener` runs on every pointer move | Logic is O(1) and fast, but more verbose than `GestureDetector.onHorizontalDragEnd`. Required to avoid arena conflicts. |
 | **Tab Animations** | No slide transition between tabs | Deliberate — `PageView` would create a second scroll axis (horizontal). Could add `AnimatedSwitcher` with clip for polish. |
-| **Data Fetching** | All products fetched upfront (~40 items) | FakeStore has only 20 products total. We fetch twice (asc + desc) and merge. Real apps would paginate per-tab with category endpoints. |
+| **Data Fetching** | All products fetched upfront (~40 items) | FakeStore has only 20 products total. I fetch twice (asc + desc) and merge. Real apps would paginate per-tab with category endpoints. |
 | **User ID Handling** | Hardcoded `userId = 1` for cart API | FakeStore's JWT doesn't expose `userId` in standard claims. Real apps would decode JWT or call `/users/me`. |
 | **Pull-to-Refresh Scope** | Refreshes all tabs, not just active | Correct behavior — single scroll view = single refresh indicator. No per-tab data silos. |
 | **Safe Area Handling** | Tab bar height includes status bar padding when pinned | Ensures tabs are always clickable below status bar. Adds visual gap when header is expanded (minor). |
