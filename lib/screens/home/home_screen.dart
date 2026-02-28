@@ -225,7 +225,7 @@ class _CollapsibleHeader extends StatelessWidget {
       automaticallyImplyLeading: false,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.parallax,
+        collapseMode: CollapseMode.pin,
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -235,6 +235,7 @@ class _CollapsibleHeader extends StatelessWidget {
             ),
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // ── Status bar gap ─────────────────────────────────────────
               SizedBox(height: topPad),
@@ -313,7 +314,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   static const double _tabHeight = 48.0;
 
   @override
-  double get minExtent => topPadding + _tabHeight;
+  double get minExtent => _tabHeight;
   @override
   double get maxExtent => topPadding + _tabHeight;
 
