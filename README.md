@@ -12,6 +12,7 @@ flutter run
 ```
 
 **Demo Credentials:**
+
 - Username: `johnd` → Password: `m38rmF$`
 - Username: `mor_2314` → Password: `83r5^_`
 
@@ -53,6 +54,7 @@ lib/
 ```
 
 **Separation of Concerns:**
+
 - **Models** = data structure only
 - **Services** = API calls only (no business logic)
 - **Controllers** = state management + business logic
@@ -63,6 +65,7 @@ lib/
 ## Mandatory Explanation
 
 ### 1. How Horizontal Swipe Was Implemented
+
 
 **TL;DR:** I use `Listener` (pre-arena pointer events) instead of `GestureDetector` to avoid gesture conflicts.
 
@@ -88,13 +91,14 @@ Listener(
 
 **Logic Flow:**
 
-| Event | Action |
-|---|---|
-| `onPointerDown` | Store start position, reset `_swipeLocked` and `_swipeCancelled` flags |
-| `onPointerMove` | Compute `dx` and `dy` from start:<br>• If `dy > dx && dy > 10px` → cancel (vertical scroll wins)<br>• If `dx ≥ 20px && dx > dy/0.6` → lock as horizontal swipe |
-| `onPointerUp` | If locked:<br>• Verify total displacement is still horizontal<br>• `totalDx < 0` → advance tab<br>• `totalDx > 0` → previous tab |
+| Event             | Action                                                                                                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `onPointerDown` | Store start position, reset `_swipeLocked` and `_swipeCancelled` flags                                                                                                          |
+| `onPointerMove` | Compute `dx` and `dy` from start:`<br>`• If `dy > dx && dy > 10px` → cancel (vertical scroll wins)`<br>`• If `dx ≥ 20px && dx > dy/0.6` → lock as horizontal swipe |
+| `onPointerUp`   | If locked:`<br>`• Verify total displacement is still horizontal`<br>`• `totalDx < 0` → advance tab`<br>`• `totalDx > 0` → previous tab                               |
 
 **Result:**
+
 - ✅ Pure vertical scrolls are **never** interrupted
 - ✅ Clear horizontal swipes always fire (even during scroll)
 - ✅ No gesture arena conflict — `Listener` doesn't compete for ownership
@@ -109,18 +113,18 @@ Listener(
 
 There is exactly **one `ScrollController`** and **one scrollable** in the entire screen. All UI elements exist as slivers inside this single scroll view:
 
-| Sliver Type | Widget | Behavior |
-|---|---|---|
+| Sliver Type        | Widget                                                      | Behavior                                           |
+| ------------------ | ----------------------------------------------------------- | -------------------------------------------------- |
 | Collapsible header | `SliverAppBar(pinned: false, floating: true, snap: true)` | Fully collapses on scroll down, snaps back on pull |
-| Sticky tab bar | `SliverPersistentHeader(pinned: true)` | Remains visible at top once header scrolls away |
-| Product grid | `SliverGrid` | Native sliver — lazy layout, no nested scroll |
+| Sticky tab bar     | `SliverPersistentHeader(pinned: true)`                    | Remains visible at top once header scrolls away    |
+| Product grid       | `SliverGrid`                                              | Native sliver — lazy layout, no nested scroll     |
 
 #### Why `SliverGrid` Over `GridView(shrinkWrap: true)`?
 
-| Approach | Issues |
-|---|---|
-| `GridView(shrinkWrap: true)` | • Forces **eager layout** of all items (performance hit)<br>• Creates a nested `Scrollable` (even with `NeverScrollableScrollPhysics`)<br>• Can cause scroll conflicts or phantom scroll contexts |
-| **`SliverGrid`** ✅ | • Lazy rendering (only visible items)<br>• First-class `CustomScrollView` citizen<br>• Zero nested scroll contexts |
+| Approach                       | Issues                                                                                                                                                                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GridView(shrinkWrap: true)` | • Forces**eager layout** of all items (performance hit)`<br>`• Creates a nested `Scrollable` (even with `NeverScrollableScrollPhysics`)`<br>`• Can cause scroll conflicts or phantom scroll contexts |
+| **`SliverGrid`** ✅    | • Lazy rendering (only visible items)`<br>`• First-class `CustomScrollView` citizen`<br>`• Zero nested scroll contexts                                                                                       |
 
 #### Why Tab Switching Doesn't Reset Scroll
 
@@ -138,56 +142,58 @@ void _switchTab(HomeTab tab) {
 
 ### 3. Trade-offs and Limitations
 
-| Area | Trade-off | Explanation |
-|---|---|---|
-| **Swipe Detection** | `Listener` runs on every pointer move | Logic is O(1) and fast, but more verbose than `GestureDetector.onHorizontalDragEnd`. Required to avoid arena conflicts. |
-| **Tab Animations** | No slide transition between tabs | Deliberate — `PageView` would create a second scroll axis (horizontal). Could add `AnimatedSwitcher` with clip for polish. |
-| **Data Fetching** | All products fetched upfront (~40 items) | FakeStore has only 20 products total. I fetch twice (asc + desc) and merge. Real apps would paginate per-tab with category endpoints. |
-| **User ID Handling** | Hardcoded `userId = 1` for cart API | FakeStore's JWT doesn't expose `userId` in standard claims. Real apps would decode JWT or call `/users/me`. |
-| **Pull-to-Refresh Scope** | Refreshes all tabs, not just active | Correct behavior — single scroll view = single refresh indicator. No per-tab data silos. |
-| **Safe Area Handling** | Tab bar height includes status bar padding when pinned | Ensures tabs are always clickable below status bar. Adds visual gap when header is expanded (minor). |
-| **Checkout** | "Proceed to Checkout" shows placeholder message | Checkout flow not implemented (assignment focuses on scroll architecture, not checkout). |
+| Area                            | Trade-off                                              | Explanation                                                                                                                           |
+| ------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Swipe Detection**       | `Listener` runs on every pointer move                | Logic is O(1) and fast, but more verbose than `GestureDetector.onHorizontalDragEnd`. Required to avoid arena conflicts.             |
+| **Tab Animations**        | No slide transition between tabs                       | Deliberate —`PageView` would create a second scroll axis (horizontal). Could add `AnimatedSwitcher` with clip for polish.        |
+| **Data Fetching**         | All products fetched upfront (~40 items)               | FakeStore has only 20 products total. I fetch twice (asc + desc) and merge. Real apps would paginate per-tab with category endpoints. |
+| **User ID Handling**      | Hardcoded `userId = 1` for cart API                  | FakeStore's JWT doesn't expose `userId` in standard claims. Real apps would decode JWT or call `/users/me`.                       |
+| **Pull-to-Refresh Scope** | Refreshes all tabs, not just active                    | Correct behavior — single scroll view = single refresh indicator. No per-tab data silos.                                             |
+| **Safe Area Handling**    | Tab bar height includes status bar padding when pinned | Ensures tabs are always clickable below status bar. Adds visual gap when header is expanded (minor).                                  |
+| **Checkout**              | "Proceed to Checkout" shows placeholder message        | Checkout flow not implemented (assignment focuses on scroll architecture, not checkout).                                              |
 
 ---
 
 ## Feature Checklist
 
 **Core Requirements:**
-- [x] Collapsible header (banner + search bar)
-- [x] Sticky tab bar when header collapses
-- [x] 2–3 tabs with product lists
-- [x] **Exactly ONE vertical scrollable** (single `CustomScrollView`)
-- [x] Pull-to-refresh works from any tab
-- [x] Tab switching **never resets scroll position**
-- [x] No scroll jitter, conflict, or duplicate scrolling
-- [x] Horizontal swipe to switch tabs (no vertical interference)
-- [x] Tap to switch tabs
-- [x] Sliver-based layout
-- [x] FakeStore API integration (login, products, cart, profile)
+
+- [X] Collapsible header (banner + search bar)
+- [X] Sticky tab bar when header collapses
+- [X] 2–3 tabs with product lists
+- [X] **Exactly ONE vertical scrollable** (single `CustomScrollView`)
+- [X] Pull-to-refresh works from any tab
+- [X] Tab switching **never resets scroll position**
+- [X] No scroll jitter, conflict, or duplicate scrolling
+- [X] Horizontal swipe to switch tabs (no vertical interference)
+- [X] Tap to switch tabs
+- [X] Sliver-based layout
+- [X] FakeStore API integration (login, products, cart, profile)
 
 **Bonus Features:**
-- [x] Auto-advancing banner carousel (3.5s timer)
-- [x] Live search with real `TextField` (filters across all tabs)
-- [x] Modern pill-style tab bar with animations
-- [x] Shimmer loading states
-- [x] Session persistence (`SharedPreferences`)
-- [x] Cart sync to API (add/update/delete)
-- [x] User profile screen
-- [x] Responsive grid (2 columns mobile, 3 columns tablet)
-- [x] Daraz color theme with centralized design tokens
+
+- [X] Auto-advancing banner carousel (3.5s timer)
+- [X] Live search with real `TextField` (filters across all tabs)
+- [X] Modern pill-style tab bar with animations
+- [X] Shimmer loading states
+- [X] Session persistence (`SharedPreferences`)
+- [X] Cart sync to API (add/update/delete)
+- [X] User profile screen
+- [X] Responsive grid (2 columns mobile, 3 columns tablet)
+- [X] Daraz color theme with centralized design tokens
 
 ---
 
 ## Dependencies
 
-| Package | Purpose | Version |
-|---|---|---|
-| `get: ^4.6.6` | State management, routing, DI | Required |
-| `http: ^1.1.0` | REST API communication | Required |
-| `shared_preferences: ^2.2.2` | Session persistence | Required |
-| `cached_network_image: ^3.3.0` | Image caching | Performance |
-| `flutter_rating_bar: ^4.0.1` | Star rating widget | UI |
-| `shimmer: ^3.0.0` | Loading skeletons | UX |
+| Package                          | Purpose                       | Version     |
+| -------------------------------- | ----------------------------- | ----------- |
+| `get: ^4.6.6`                  | State management, routing, DI | Required    |
+| `http: ^1.1.0`                 | REST API communication        | Required    |
+| `shared_preferences: ^2.2.2`   | Session persistence           | Required    |
+| `cached_network_image: ^3.3.0` | Image caching                 | Performance |
+| `flutter_rating_bar: ^4.0.1`   | Star rating widget            | UI          |
+| `shimmer: ^3.0.0`              | Loading skeletons             | UX          |
 
 ---
 
@@ -202,6 +208,7 @@ void _switchTab(HomeTab tab) {
 5. **Honest documentation** — README explains design decisions, not just features
 
 **Assignment focus areas:**
+
 - ✅ Scroll architecture (not UI polish)
 - ✅ Gesture coordination (horizontal vs vertical)
 - ✅ Ability to explain decisions and trade-offs
