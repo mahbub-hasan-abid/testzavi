@@ -4,7 +4,7 @@ A production-ready Daraz-style e-commerce app demonstrating **single-scroll arch
 
 ---
 
-## 🚀 Run Instructions
+## Run Instructions
 
 ```bash
 flutter pub get
@@ -19,7 +19,7 @@ Or tap **"Tap to fill"** on the login screen for automatic credentials.
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ### MVC + GetX Pattern
 
@@ -60,9 +60,9 @@ lib/
 
 ---
 
-## 📜 Mandatory Explanation
+## Mandatory Explanation
 
-### 1️⃣ How Horizontal Swipe Was Implemented
+### 1. How Horizontal Swipe Was Implemented
 
 **TL;DR:** I use `Listener` (pre-arena pointer events) instead of `GestureDetector` to avoid gesture conflicts.
 
@@ -101,7 +101,7 @@ Listener(
 
 ---
 
-### 2️⃣ Who Owns the Vertical Scroll (and Why)
+### 2. Who Owns the Vertical Scroll (and Why)
 
 **Answer:** The **single `CustomScrollView` in `HomeScreen`** owns all vertical scrolling.
 
@@ -136,7 +136,7 @@ void _switchTab(HomeTab tab) {
 
 ---
 
-### 3️⃣ Trade-offs and Limitations
+### 3. Trade-offs and Limitations
 
 | Area | Trade-off | Explanation |
 |---|---|---|
@@ -150,7 +150,7 @@ void _switchTab(HomeTab tab) {
 
 ---
 
-## ✅ Feature Checklist
+## Feature Checklist
 
 **Core Requirements:**
 - [x] Collapsible header (banner + search bar)
@@ -178,7 +178,7 @@ void _switchTab(HomeTab tab) {
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 | Package | Purpose | Version |
 |---|---|---|
@@ -191,7 +191,7 @@ void _switchTab(HomeTab tab) {
 
 ---
 
-## 🎯 Evaluation Highlights
+## Evaluation Highlights
 
 **This implementation demonstrates:**
 
@@ -208,7 +208,7 @@ void _switchTab(HomeTab tab) {
 
 ---
 
-## 🔗 Repository
+## Repository
 
 - **GitHub:** [mahbub-hasan-abid/testzavi](https://github.com/mahbub-hasan-abid/testzavi)
 - **Flutter Version:** 3.10.7
