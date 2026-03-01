@@ -144,10 +144,8 @@ void _switchTab(HomeTab tab) {
 
 | Area                            | Trade-off                                              | Explanation                                                                                                                           |
 | ------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Swipe Detection**       | `Listener` runs on every pointer move                | Logic is O(1) and fast, but more verbose than `GestureDetector.onHorizontalDragEnd`. Required to avoid arena conflicts.             |
 | **Tab Animations**        | No slide transition between tabs                       | Deliberate —`PageView` would create a second scroll axis (horizontal). Could add `AnimatedSwitcher` with clip for polish.        |
 | **Data Fetching**         | All products fetched upfront (~40 items)               | FakeStore has only 20 products total. I fetch twice (asc + desc) and merge. Real apps would paginate per-tab with category endpoints. |
-| **User ID Handling**      | Hardcoded `userId = 1` for cart API                  | FakeStore's JWT doesn't expose `userId` in standard claims. Real apps would decode JWT or call `/users/me`.                       |
 | **Pull-to-Refresh Scope** | Refreshes all tabs, not just active                    | Correct behavior — single scroll view = single refresh indicator. No per-tab data silos.                                             |
 | **Safe Area Handling**    | Tab bar height includes status bar padding when pinned | Ensures tabs are always clickable below status bar. Adds visual gap when header is expanded (minor).                                  |
 | **Checkout**              | "Proceed to Checkout" shows placeholder message        | Checkout flow not implemented (assignment focuses on scroll architecture, not checkout).                                              |
