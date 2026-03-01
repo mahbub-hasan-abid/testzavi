@@ -66,7 +66,6 @@ lib/
 
 ### 1. How Horizontal Swipe Was Implemented
 
-
 **TL;DR:** I use `Listener` (pre-arena pointer events) instead of `GestureDetector` to avoid gesture conflicts.
 
 #### Why Not `GestureDetector`?
@@ -95,7 +94,7 @@ Listener(
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `onPointerDown` | Store start position, reset `_swipeLocked` and `_swipeCancelled` flags                                                                                                          |
 | `onPointerMove` | Compute `dx` and `dy` from start:`<br>`• If `dy > dx && dy > 10px` → cancel (vertical scroll wins)`<br>`• If `dx ≥ 20px && dx > dy/0.6` → lock as horizontal swipe |
-| `onPointerUp`   | If locked:`<br>`• Verify total displacement is still horizontal`<br>`• `totalDx < 0` → advance tab`<br>`• `totalDx > 0` → previous tab                               |
+| `onPointerUp`   | If locked:`<br>`• Verify total displacement is still horizontal `<br>`• `totalDx < 0` → advance tab `<br>`• `totalDx > 0` → previous tab                             |
 
 **Result:**
 
@@ -124,7 +123,7 @@ There is exactly **one `ScrollController`** and **one scrollable** in the entire
 | Approach                       | Issues                                                                                                                                                                                                                |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GridView(shrinkWrap: true)` | • Forces**eager layout** of all items (performance hit)`<br>`• Creates a nested `Scrollable` (even with `NeverScrollableScrollPhysics`)`<br>`• Can cause scroll conflicts or phantom scroll contexts |
-| **`SliverGrid`** ✅    | • Lazy rendering (only visible items)`<br>`• First-class `CustomScrollView` citizen`<br>`• Zero nested scroll contexts                                                                                       |
+| **`SliverGrid`** ✅    | • Lazy rendering (only visible items)`<br>`• First-class `CustomScrollView` citizen `<br>`• Zero nested scroll contexts                                                                                      |
 
 #### Why Tab Switching Doesn't Reset Scroll
 
